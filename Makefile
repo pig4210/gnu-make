@@ -27,7 +27,7 @@ CFLAGS		:= $(CFLAGS) /Fd"$(GPATH)/make.pdb"
 CFLAGS		:= $(CFLAGS) /wd4267 /wd4214 /wd4244 /wd4477 /wd4307 /wd4115 /wd4130 /wd4310 /wd4389 /wd4090 /wd4018 /wd4456 /wd4996 /wd4706 /wd4701
 
 ifeq "$(Platform)" "x86"
-CFLAGS		:= $(CFLAGS) /D "_USING_V110_SDK71_"
+CFLAGS		:= $(CFLAGS) /D _USING_V110_SDK71_
 endif
 
 ######## LDFLAGS
