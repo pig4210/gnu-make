@@ -5,8 +5,8 @@ ifeq "$(filter x64 x86,$(Platform))" ""
 $(error Need VS Environment)
 endif
 
-ifeq "$(VPATH)" ""
-$(error Need VPATH)
+ifeq "$(SRCPATH)" ""
+$(error Need SRCPATH)
 endif
 
 LINK 		:= link.exe
@@ -14,16 +14,38 @@ CC 			:= cl.exe
 
 GPATH		:= $(Platform)
 
+OUTDIR		:= $(GPATH)
+
+# 源文件搜索路径
+vpath %.c $(SRCPATH)
+vpath %.h $(SRCPATH)
+
+vpath %.c $(SRCPATH)/glob
+vpath %.h $(SRCPATH)/glob
+vpath %.c $(SRCPATH)/w32
+vpath %.h $(SRCPATH)/w32
+vpath %.c $(SRCPATH)/w32/compat
+vpath %.h $(SRCPATH)/w32/compat
+vpath %.c $(SRCPATH)/w32/subproc
+vpath %.h $(SRCPATH)/w32/subproc
+
+vpath %.c	$(OUTDIR)
+
+VPATH		:= $(SRCPATH)
+
+# 最终目标文件搜索路径
+vpath %.exe $(OUTDIR)
+vpath %.o 	$(OUTDIR)
+
 ######## CFLAGS		注意到 CFLAGS 不能使用 UNICODE
 CFLAGS		:= /c /MP /GS- /Qpar /GL /analyze- /W4 /Gy /Zc:wchar_t /Zi /Gm- /Ox /Zc:inline /fp:precise /D WIN32 /D NDEBUG /fp:except- /errorReport:none /GF /WX /Zc:forScope /GR- /Gd /Oy /Oi /MT /EHa /nologo
 CFLAGS		:= $(CFLAGS) /D WINDOWS32 /D _WINDOWS \
 	/D HAVE_CONFIG_H /D _CONSOLE
-CFLAGS		:= $(CFLAGS) /I"$(VPATH)"\
-	/I"$(VPATH)/glob" \
-	/I"$(VPATH)/w32/subproc" \
-	/I"$(VPATH)/w32/subproc/../include" \
-	/I"$(GPATH)"
-CFLAGS		:= $(CFLAGS) /Fd"$(GPATH)/make.pdb"
+CFLAGS		:= $(CFLAGS) /I"$(SRCPATH)" \
+	/I"$(SRCPATH)/glob" \
+	/I"$(SRCPATH)/w32/subproc" \
+	/I"$(SRCPATH)/w32/include"
+CFLAGS		:= $(CFLAGS) /Fd"$(OUTDIR)/make.pdb"
 CFLAGS		:= $(CFLAGS) /wd4267 /wd4214 /wd4244 /wd4477 /wd4307 /wd4115 /wd4130 /wd4310 /wd4389 /wd4090 /wd4018 /wd4456 /wd4996 /wd4706 /wd4701
 
 ifeq "$(Platform)" "x86"
@@ -39,10 +61,6 @@ else
 LDFLAGS		:= $(LDFLAGS) /SUBSYSTEM:CONSOLE
 endif
 LDFLAGS		:= $(LDFLAGS) /STACK:0x400000 advapi32.lib
-
-
-OUTDIR		:= $(GPATH)
-
 
 ######## 以下参考 NMakefile ########
 guile = $(OUTDIR)/guile.obj
@@ -64,7 +82,6 @@ OBJS = \
 	$(OUTDIR)/implicit.obj \
 	$(OUTDIR)/job.obj \
 	$(OUTDIR)/load.obj \
-	$(OUTDIR)/loadapi.obj \
 	$(OUTDIR)/main.obj \
 	$(OUTDIR)/misc.obj \
 	$(OUTDIR)/output.obj \
@@ -77,46 +94,37 @@ OBJS = \
 	$(OUTDIR)/variable.obj \
 	$(OUTDIR)/version.obj \
 	$(OUTDIR)/vpath.obj \
-	$(OUTDIR)/glob/glob.obj \
-	$(OUTDIR)/glob/fnmatch.obj \
-	$(OUTDIR)/w32/compat/dirent.obj \
-	$(OUTDIR)/w32/pathstuff.obj \
-	$(OUTDIR)/w32/compat/posixfcn.obj \
-	$(OUTDIR)/w32/w32os.obj \
+	$(OUTDIR)/glob.obj \
+	$(OUTDIR)/fnmatch.obj \
+	$(OUTDIR)/dirent.obj \
+	$(OUTDIR)/pathstuff.obj \
+	$(OUTDIR)/posixfcn.obj \
+	$(OUTDIR)/w32os.obj \
 	$(guile)
 ################################################
 
 ######## 以下参考 ./w32/subproc/NMakefile ########
 ## 前置 SUBPROC_
-## 替换 $(OUTDIR) $(GPATH)/w32/subproc
-SUBPROC_OBJS = $(GPATH)/w32/subproc/misc.obj \
-	$(GPATH)/w32/subproc/w32err.obj \
-	$(GPATH)/w32/subproc/sub_proc.obj
+## 修改 misc 避免冲突
+SUBPROC_OBJS := $(OUTDIR)/misc1.obj $(OUTDIR)/w32err.obj $(OUTDIR)/sub_proc.obj
 ################################################
 
 .PHONY : all
-all : $(GPATH)/config.h $(GPATH)/make.exe
+all : $(OUTDIR)/make.exe
 	@echo make done.
 
-$(GPATH)/make.exe : $(OBJS) $(SUBPROC_OBJS)
-	$(LINK) $(LDFLAGS) $^ /OUT:"$@"
+$(OUTDIR)/make.exe : $(OBJS) $(SUBPROC_OBJS)
+	$(LINK) $(LDFLAGS) $^ /OUT:"$(OUTDIR)/$(@F)"
+
+$(OBJS) $(SUBPROC_OBJS) : config.h | $(OUTDIR)
+
+$(OUTDIR) :
+	@mkdir $@
 
 ######## 以下参考 NMakefile ########
-$(GPATH)/config.h: $(VPATH)\\config.h.W32
-	@for %%F in ("$@") do @if not exist "%%~dpF" @mkdir "%%~dpF"
-	copy "$?" "$@"
-
-vpath config.h $(GPATH)
-
-## 去除命令
-## 添加路径 才能触发模式匹配
-$(OUTDIR)/glob/glob.obj : glob/glob.c
-$(OUTDIR)/glob/fnmatch.obj : glob/fnmatch.c
-$(OUTDIR)/w32/compat/dirent.obj : w32/compat/dirent.c
-$(OUTDIR)/w32/compat/posixfcn.obj : w32/compat/posixfcn.c
-$(OUTDIR)/w32/pathstuff.obj : w32/pathstuff.c
-$(OUTDIR)/w32/w32os.obj : w32/w32os.c
-
+## 修改命令
+config.h: config.h.W32
+	copy "$(?D)\\$(?F)" "$(?D)\\$(@F)"
 
 $(OUTDIR)/ar.obj: ar.c makeint.h config.h \
  gnumake.h \
@@ -342,28 +350,21 @@ $(OUTDIR)/vpath.obj: vpath.c makeint.h config.h \
  getopt.h \
  gettext.h \
  filedef.h hash.h variable.h
+
+## glob 等对应的规则，由于没有其它依赖，则利用默认依赖，这里不需要复制过来
 ################################################
 
 ######## 以下参考 ./w32/subproc/NMakefile ########
-## 替换 $(OUTDIR) $(GPATH)/w32/subproc
-## 添加 $(VPATH)/w32/subproc/
-$(GPATH)/w32/subproc/misc.obj: \
-	$(VPATH)/w32/subproc/misc.c \
-	$(VPATH)/w32/subproc/proc.h
-
-$(GPATH)/w32/subproc/sub_proc.obj: \
-	$(VPATH)/w32/subproc/sub_proc.c  \
-	$(VPATH)/w32/subproc/../include/sub_proc.h \
-	$(VPATH)/w32/subproc/../include/w32err.h \
-	$(VPATH)/w32/subproc/proc.h
-
-$(GPATH)/w32/subproc/w32err.obj: \
-	$(VPATH)/w32/subproc/w32err.c \
-	$(VPATH)/w32/subproc/../include/w32err.h
+## 对应修改 misc
+## 添加特殊处理，避免首次编译找不到 misc1.c 导致失败
+$(OUTDIR)/misc1.obj: misc1.c proc.h
+	$(CC) $(CFLAGS) "$(SRCPATH)/w32/subproc/$(<F)" -Fo"$@"
+$(OUTDIR)/sub_proc.obj: sub_proc.c  ../include/sub_proc.h ../include/w32err.h proc.h
+$(OUTDIR)/w32err.obj: w32err.c ../include/w32err.h
 ################################################
 
+misc1.c : $(SRCPATH)/w32/subproc/misc.c
+	@copy /y "$(<D)\\$(<F)" "$(<D)/$(@F)"
 
-
-$(GPATH)/%.obj : $(VPATH)/%.c
-	@for %%F in ("$@") do @if not exist "%%~dpF" @mkdir "%%~dpF"
+$(OUTDIR)/%.obj : %.c
 	$(CC) $(CFLAGS) "$<" -Fo"$@"

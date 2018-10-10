@@ -107,7 +107,7 @@
         echo %MAKE% -f Makefile VPATH=%VPATH%
         echo.
     )
-    %MAKE% -f Makefile VPATH=%VPATH% %SUF% && exit /B 0
+    %MAKE% -f Makefile SRCPATH=%VPATH% %SUF% && exit /B 0
     
     echo !!!!!!!! Make Error !!!!!!!!
     exit /B 1
