@@ -99,7 +99,7 @@ all : $(GPATH)/config.h $(GPATH)/make.exe
 	@echo make done.
 
 $(GPATH)/make.exe : $(OBJS) $(SUBPROC_OBJS)
-	$(LINK) $(LDFLAGS) $? /OUT:"$@"
+	$(LINK) $(LDFLAGS) $^ /OUT:"$@"
 
 ######## 以下参考 NMakefile ########
 $(GPATH)/config.h: $(VPATH)\\config.h.W32
