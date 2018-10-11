@@ -323,30 +323,30 @@ LINK 		:= link.exe
 CC 			:= cl.exe
 
 ######## CFLAGS		注意到 CFLAGS 不能使用 UNICODE
-CFLAGS		:= /c /MP /GS- /Qpar /GL /analyze- /W4 /Gy /Zc:wchar_t /Zi /Gm- /Ox /Zc:inline /fp:precise /D WIN32 /D NDEBUG /fp:except- /errorReport:none /GF /WX /Zc:forScope /GR- /Gd /Oy /Oi /MT /EHa /nologo
-CFLAGS		:= $(CFLAGS) /D WINDOWS32 /D _WINDOWS \
+CFLAGS		= /c /MP /GS- /Qpar /GL /analyze- /W4 /Gy /Zc:wchar_t /Zi /Gm- /Ox /Zc:inline /fp:precise /D WIN32 /D NDEBUG /fp:except- /errorReport:none /GF /WX /Zc:forScope /GR- /Gd /Oy /Oi /MT /EHa /nologo
+CFLAGS		+= /D WINDOWS32 /D _WINDOWS \
 	/D HAVE_CONFIG_H /D _CONSOLE
-CFLAGS		:= $(CFLAGS) /I"$(SRCPATH)" \
+CFLAGS		+= /I"$(SRCPATH)" \
 	/I"$(SRCPATH)/glob" \
 	/I"$(SRCPATH)/w32/subproc" \
 	/I"$(SRCPATH)/w32/include"
-CFLAGS		:= $(CFLAGS) /Fd"$(DESTPATH)/make.pdb"
-CFLAGS		:= $(CFLAGS) /wd4267 /wd4214 /wd4244 /wd4477 /wd4307 /wd4115 /wd4130 /wd4310 /wd4389 /wd4090 /wd4018 /wd4456 /wd4996 /wd4706 /wd4701
+CFLAGS		+= /Fd"$(DESTPATH)/make.pdb"
+CFLAGS		+= /wd4267 /wd4214 /wd4244 /wd4477 /wd4307 /wd4115 /wd4130 /wd4310 /wd4389 /wd4090 /wd4018 /wd4456 /wd4996 /wd4706 /wd4701
 
 ifeq "$(Platform)" "x86"
-CFLAGS		:= $(CFLAGS) /D _USING_V110_SDK71_
+CFLAGS		+= /D _USING_V110_SDK71_
 endif
 
 ######## LDFLAGS
-LDFLAGS		:= /MANIFEST:NO /LTCG /NXCOMPAT /DYNAMICBASE "kernel32.lib" "user32.lib" "gdi32.lib" "winspool.lib" "comdlg32.lib" "advapi32.lib" "shell32.lib" "ole32.lib" "oleaut32.lib" "uuid.lib" "odbc32.lib" "odbccp32.lib" /OPT:REF /INCREMENTAL:NO /OPT:ICF /ERRORREPORT:NONE /NOLOGO /MACHINE:$(Platform)
+LDFLAGS		= /MANIFEST:NO /LTCG /NXCOMPAT /DYNAMICBASE "kernel32.lib" "user32.lib" "gdi32.lib" "winspool.lib" "comdlg32.lib" "advapi32.lib" "shell32.lib" "ole32.lib" "oleaut32.lib" "uuid.lib" "odbc32.lib" "odbccp32.lib" /OPT:REF /INCREMENTAL:NO /OPT:ICF /ERRORREPORT:NONE /NOLOGO /MACHINE:$(Platform)
 
 ifeq "$(Platform)" "x86"
-LDFLAGS		:= $(LDFLAGS) /SAFESEH /SUBSYSTEM:CONSOLE",5.01"
+LDFLAGS		+= /SAFESEH /SUBSYSTEM:CONSOLE",5.01"
 else
-LDFLAGS		:= $(LDFLAGS) /SUBSYSTEM:CONSOLE
+LDFLAGS		+= /SUBSYSTEM:CONSOLE
 endif
 
-LDFLAGS		:= $(LDFLAGS) /STACK:0x400000 advapi32.lib
+LDFLAGS		+= /STACK:0x400000 advapi32.lib
 
 
 # 源文件搜索路径
@@ -378,7 +378,7 @@ $(DESTPATH) :
 # 模式规则
 $(DESTPATH)/%.obj : %.c
 	$(CC) $(CFLAGS) "$<" -Fo"$@"
-	
+
 .PHONY : clean
 clean :
 	@if exist "x64" @rd /s /q "x64"
