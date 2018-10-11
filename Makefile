@@ -1,12 +1,17 @@
 ﻿# 这个 Makefile 用于使用 GNU make 在 Windows 下编译 GNU make
 # http://www.gnu.org/software/make/
 
-ifeq "$(filter x64 x86,$(Platform))" ""
-$(error Need VS Environment)
-endif
+# 如果只是单纯的 clean ，则无需 环境 和 路径
+ifneq "$(MAKECMDGOALS)" "clean"
 
-ifeq "$(SRCPATH)" ""
-$(error Need SRCPATH)
+  ifeq "$(filter x64 x86,$(Platform))" ""
+    $(error Need VS Environment)
+  endif
+
+  ifeq "$(SRCPATH)" ""
+    $(error Need SRCPATH)
+  endif
+
 endif
 
 DESTPATH	:= $(Platform)
@@ -376,6 +381,9 @@ $(DESTPATH)/%.obj : %.c
 	
 .PHONY : clean
 clean :
-	@if exist "$(DESTPATH)" @rd /s /q "$(DESTPATH)"
-	@if exist "$(SRCPATH)\\config.h" @del /q "$(SRCPATH)\\config.h"
-	@if exist "$(SRCPATH)/w32/subproc\\misc1.c" @del /q "$(SRCPATH)/w32/subproc\\misc1.c"
+	@if exist "x64" @rd /s /q "x64"
+	@if exist "x86" @rd /s /q "x86"
+	@for /d %%P in ("make*") do \
+		@if exist "%%~P\\config.h" @del /q "%%~P\\config.h"
+	@for /d %%P in ("make*") do \
+		@if exist "%%~P\\/w32/subproc\\misc1.c" @del /q "%%~P\\/w32/subproc\\misc1.c"
