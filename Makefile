@@ -1,4 +1,4 @@
-﻿# 这个 Makefile 用于使用 GNU make 在 Windows 编译自身
+﻿# 这个 Makefile 用于使用 GNU make 在 Windows 下编译 GNU make
 # http://www.gnu.org/software/make/
 
 ifeq "$(filter x64 x86,$(Platform))" ""
@@ -9,58 +9,17 @@ ifeq "$(SRCPATH)" ""
 $(error Need SRCPATH)
 endif
 
-LINK 		:= link.exe
-CC 			:= cl.exe
+DESTPATH	:= $(Platform)
 
-GPATH		:= $(Platform)
 
-OUTDIR		:= $(GPATH)
+# make.exe 添加路径，避免与原始 make.exe 冲突
+# 在 源代码目录 下，有生成两个文件，不主动删除，避免每次 make 都需要生成
+.PHONY : all
+all : $(DESTPATH)/make.exe
+	@echo make done.
 
-# 源文件搜索路径
-vpath %.c $(SRCPATH)
-vpath %.h $(SRCPATH)
 
-vpath %.c $(SRCPATH)/glob
-vpath %.h $(SRCPATH)/glob
-vpath %.c $(SRCPATH)/w32
-vpath %.h $(SRCPATH)/w32
-vpath %.c $(SRCPATH)/w32/compat
-vpath %.h $(SRCPATH)/w32/compat
-vpath %.c $(SRCPATH)/w32/subproc
-vpath %.h $(SRCPATH)/w32/subproc
-
-vpath %.c	$(OUTDIR)
-
-VPATH		:= $(SRCPATH)
-
-# 最终目标文件搜索路径
-vpath %.exe $(OUTDIR)
-vpath %.o 	$(OUTDIR)
-
-######## CFLAGS		注意到 CFLAGS 不能使用 UNICODE
-CFLAGS		:= /c /MP /GS- /Qpar /GL /analyze- /W4 /Gy /Zc:wchar_t /Zi /Gm- /Ox /Zc:inline /fp:precise /D WIN32 /D NDEBUG /fp:except- /errorReport:none /GF /WX /Zc:forScope /GR- /Gd /Oy /Oi /MT /EHa /nologo
-CFLAGS		:= $(CFLAGS) /D WINDOWS32 /D _WINDOWS \
-	/D HAVE_CONFIG_H /D _CONSOLE
-CFLAGS		:= $(CFLAGS) /I"$(SRCPATH)" \
-	/I"$(SRCPATH)/glob" \
-	/I"$(SRCPATH)/w32/subproc" \
-	/I"$(SRCPATH)/w32/include"
-CFLAGS		:= $(CFLAGS) /Fd"$(OUTDIR)/make.pdb"
-CFLAGS		:= $(CFLAGS) /wd4267 /wd4214 /wd4244 /wd4477 /wd4307 /wd4115 /wd4130 /wd4310 /wd4389 /wd4090 /wd4018 /wd4456 /wd4996 /wd4706 /wd4701
-
-ifeq "$(Platform)" "x86"
-CFLAGS		:= $(CFLAGS) /D _USING_V110_SDK71_
-endif
-
-######## LDFLAGS
-LDFLAGS		:= /MANIFEST:NO /LTCG /NXCOMPAT /DYNAMICBASE "kernel32.lib" "user32.lib" "gdi32.lib" "winspool.lib" "comdlg32.lib" "advapi32.lib" "shell32.lib" "ole32.lib" "oleaut32.lib" "uuid.lib" "odbc32.lib" "odbccp32.lib" /OPT:REF /INCREMENTAL:NO /OPT:ICF /ERRORREPORT:NONE /NOLOGO /MACHINE:$(Platform)
-
-ifeq "$(Platform)" "x86"
-LDFLAGS		:= $(LDFLAGS) /SAFESEH /SUBSYSTEM:CONSOLE",5.01"
-else
-LDFLAGS		:= $(LDFLAGS) /SUBSYSTEM:CONSOLE
-endif
-LDFLAGS		:= $(LDFLAGS) /STACK:0x400000 advapi32.lib
+OUTDIR		:= $(Platform)
 
 ######## 以下参考 NMakefile ########
 guile = $(OUTDIR)/guile.obj
@@ -101,30 +60,13 @@ OBJS = \
 	$(OUTDIR)/posixfcn.obj \
 	$(OUTDIR)/w32os.obj \
 	$(guile)
-################################################
 
-######## 以下参考 ./w32/subproc/NMakefile ########
-## 前置 SUBPROC_
-## 修改 misc 避免冲突
-SUBPROC_OBJS := $(OUTDIR)/misc1.obj $(OUTDIR)/w32err.obj $(OUTDIR)/sub_proc.obj
-################################################
+# 添加依赖的搜索路径
+vpath config.h.W32 $(SRCPATH)
 
-.PHONY : all
-all : $(OUTDIR)/make.exe
-	@echo make done.
-
-$(OUTDIR)/make.exe : $(OBJS) $(SUBPROC_OBJS)
-	$(LINK) $(LDFLAGS) $^ /OUT:"$(OUTDIR)/$(@F)"
-
-$(OBJS) $(SUBPROC_OBJS) : config.h | $(OUTDIR)
-
-$(OUTDIR) :
-	@mkdir $@
-
-######## 以下参考 NMakefile ########
 ## 修改命令
 config.h: config.h.W32
-	copy "$(?D)\\$(?F)" "$(?D)\\$(@F)"
+	copy /y "$(?D)\\$(?F)" "$(?D)\\$(@F)"
 
 $(OUTDIR)/ar.obj: ar.c makeint.h config.h \
  gnumake.h \
@@ -355,16 +297,85 @@ $(OUTDIR)/vpath.obj: vpath.c makeint.h config.h \
 ################################################
 
 ######## 以下参考 ./w32/subproc/NMakefile ########
+## 前置 SUBPROC_
+## 修改 misc 避免冲突
+SUBPROC_OBJS = $(OUTDIR)/misc1.obj $(OUTDIR)/w32err.obj $(OUTDIR)/sub_proc.obj
+
 ## 对应修改 misc
 ## 添加特殊处理，避免首次编译找不到 misc1.c 导致失败
 $(OUTDIR)/misc1.obj: misc1.c proc.h
 	$(CC) $(CFLAGS) "$(SRCPATH)/w32/subproc/$(<F)" -Fo"$@"
 $(OUTDIR)/sub_proc.obj: sub_proc.c  ../include/sub_proc.h ../include/w32err.h proc.h
 $(OUTDIR)/w32err.obj: w32err.c ../include/w32err.h
+
+## 添加 misc1.c 的生成
+misc1.c : $(SRCPATH)/w32/subproc/misc.c
+	copy /y "$(?D)\\$(?F)" "$(?D)\\$(@F)"
 ################################################
 
-misc1.c : $(SRCPATH)/w32/subproc/misc.c
-	@copy /y "$(<D)\\$(<F)" "$(<D)/$(@F)"
 
-$(OUTDIR)/%.obj : %.c
+LINK 		:= link.exe
+CC 			:= cl.exe
+
+######## CFLAGS		注意到 CFLAGS 不能使用 UNICODE
+CFLAGS		:= /c /MP /GS- /Qpar /GL /analyze- /W4 /Gy /Zc:wchar_t /Zi /Gm- /Ox /Zc:inline /fp:precise /D WIN32 /D NDEBUG /fp:except- /errorReport:none /GF /WX /Zc:forScope /GR- /Gd /Oy /Oi /MT /EHa /nologo
+CFLAGS		:= $(CFLAGS) /D WINDOWS32 /D _WINDOWS \
+	/D HAVE_CONFIG_H /D _CONSOLE
+CFLAGS		:= $(CFLAGS) /I"$(SRCPATH)" \
+	/I"$(SRCPATH)/glob" \
+	/I"$(SRCPATH)/w32/subproc" \
+	/I"$(SRCPATH)/w32/include"
+CFLAGS		:= $(CFLAGS) /Fd"$(DESTPATH)/make.pdb"
+CFLAGS		:= $(CFLAGS) /wd4267 /wd4214 /wd4244 /wd4477 /wd4307 /wd4115 /wd4130 /wd4310 /wd4389 /wd4090 /wd4018 /wd4456 /wd4996 /wd4706 /wd4701
+
+ifeq "$(Platform)" "x86"
+CFLAGS		:= $(CFLAGS) /D _USING_V110_SDK71_
+endif
+
+######## LDFLAGS
+LDFLAGS		:= /MANIFEST:NO /LTCG /NXCOMPAT /DYNAMICBASE "kernel32.lib" "user32.lib" "gdi32.lib" "winspool.lib" "comdlg32.lib" "advapi32.lib" "shell32.lib" "ole32.lib" "oleaut32.lib" "uuid.lib" "odbc32.lib" "odbccp32.lib" /OPT:REF /INCREMENTAL:NO /OPT:ICF /ERRORREPORT:NONE /NOLOGO /MACHINE:$(Platform)
+
+ifeq "$(Platform)" "x86"
+LDFLAGS		:= $(LDFLAGS) /SAFESEH /SUBSYSTEM:CONSOLE",5.01"
+else
+LDFLAGS		:= $(LDFLAGS) /SUBSYSTEM:CONSOLE
+endif
+
+LDFLAGS		:= $(LDFLAGS) /STACK:0x400000 advapi32.lib
+
+
+# 源文件搜索路径
+vpath %.c $(SRCPATH)
+vpath %.h $(SRCPATH)
+
+vpath %.c $(SRCPATH)/glob
+vpath %.h $(SRCPATH)/glob
+vpath %.c $(SRCPATH)/w32
+vpath %.h $(SRCPATH)/w32
+vpath %.c $(SRCPATH)/w32/compat
+vpath %.h $(SRCPATH)/w32/compat
+vpath %.c $(SRCPATH)/w32/subproc
+vpath %.h $(SRCPATH)/w32/subproc
+
+# 目标文件搜索路径
+vpath %.o 	$(DESTPATH)
+
+
+$(DESTPATH)/make.exe : $(OBJS) $(SUBPROC_OBJS)
+	$(LINK) $(LDFLAGS) $^ /OUT:"$(DESTPATH)/$(@F)"
+
+# 添加依赖 config.h，以及一次性的目录依赖 
+$(OBJS) $(SUBPROC_OBJS) : config.h | $(DESTPATH)
+
+$(DESTPATH) :
+	@mkdir $@
+
+# 模式规则
+$(DESTPATH)/%.obj : %.c
 	$(CC) $(CFLAGS) "$<" -Fo"$@"
+	
+.PHONY : clean
+clean :
+	@if exist "$(DESTPATH)" @rd /s /q "$(DESTPATH)"
+	@if exist "$(SRCPATH)\\config.h" @del /q "$(SRCPATH)\\config.h"
+	@if exist "$(SRCPATH)/w32/subproc\\misc1.c" @del /q "$(SRCPATH)/w32/subproc\\misc1.c"

@@ -5,7 +5,7 @@
     pushd "%~dp0"
     
 ::baseconfig
-    set VCPATH=C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build
+    set VCPath=C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build
     set MyPath=%CD%
     set MAKE=%MyPath%/make.exe
 
@@ -19,23 +19,23 @@
     for %%I in (a b c d e f g h i j k l m n o p q r s t u v w x y z) do set ProjectName=!ProjectName:%%I=%%I!
     setlocal disabledelayedexpansion
 
-    for /d %%P in ("%MyPath%\\%ProjectName%*") do set VPATH=%%~fP
-    if "%VPATH%"=="" (
+    for /d %%P in ("%MyPath%\\%ProjectName%*") do set SrcPath=%%~fP
+    if "%SrcPath%"=="" (
         echo !!!!!!!! Src no found !!!!!!!!
         goto end
     )
-    echo ==== ==== ==== ==== Got source folder [ %VPATH% ]
+    echo ==== ==== ==== ==== Got source folder [ %SrcPath% ]
     echo.
 
 ::main
     echo.
     cl >nul 2>&1
     if %errorlevel%==0 (
-        echo ==== ==== ==== ==== Build %Platform% ^& processing ==== ==== ==== ==== 
+        echo ==== ==== ==== ==== Build %Platform% ^& processing ==== ==== ==== ====
         echo.
         call :do || goto end
     ) else (
-        echo ==== ==== ==== ==== Build x64 ^& x86 by silence ==== ==== ==== ==== 
+        echo ==== ==== ==== ==== Build x64 ^& x86 by silence ==== ==== ==== ====
         echo.
         call :do x64 || goto end
         call :do x86 || goto end
@@ -104,10 +104,10 @@
 :make
     if "%SUF%"=="" (
         echo.
-        echo %MAKE% -f Makefile VPATH=%VPATH%
+        echo %MAKE% SrcPath=%SrcPath%
         echo.
     )
-    %MAKE% -f Makefile SRCPATH=%VPATH% %SUF% && exit /B 0
+    %MAKE% SRCPATH=%SrcPath% %SUF% && exit /B 0
     
     echo !!!!!!!! Make Error !!!!!!!!
     exit /B 1
