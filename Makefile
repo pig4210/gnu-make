@@ -323,9 +323,9 @@ LINK 		:= link.exe
 CC 			:= cl.exe
 
 ######## CFLAGS		注意到 CFLAGS 不能使用 UNICODE
-CFLAGS		= /c /MP /GS- /Qpar /GL /analyze- /W4 /Gy /Zc:wchar_t /Zi /Gm- /Ox /Zc:inline /fp:precise /D WIN32 /D NDEBUG /fp:except- /errorReport:none /GF /WX /Zc:forScope /GR- /Gd /Oy /Oi /MT /EHa /nologo
-CFLAGS		+= /D WINDOWS32 /D _WINDOWS \
-	/D HAVE_CONFIG_H /D _CONSOLE
+CFLAGS		= /c /MP /GS- /Qpar /GL /analyze- /W4 /Gy /Zc:wchar_t /Zi /Gm- /Ox /Zc:inline /fp:precise /DWIN32 /DNDEBUG /fp:except- /errorReport:none /GF /WX /Zc:forScope /GR- /Gd /Oy /Oi /MT /EHa /nologo
+CFLAGS		+= /DWINDOWS32 /D_WINDOWS \
+	/DHAVE_CONFIG_H /D_CONSOLE
 CFLAGS		+= /I"$(SRCPATH)" \
 	/I"$(SRCPATH)/glob" \
 	/I"$(SRCPATH)/w32/subproc" \
@@ -334,7 +334,7 @@ CFLAGS		+= /Fd"$(DESTPATH)/make.pdb"
 CFLAGS		+= /wd4267 /wd4214 /wd4244 /wd4477 /wd4307 /wd4115 /wd4130 /wd4310 /wd4389 /wd4090 /wd4018 /wd4456 /wd4996 /wd4706 /wd4701
 
 ifeq "$(Platform)" "x86"
-CFLAGS		+= /D _USING_V110_SDK71_
+CFLAGS		+= /D_USING_V110_SDK71_
 endif
 
 ######## LDFLAGS
@@ -373,7 +373,7 @@ $(DESTPATH)/make.exe : $(OBJS) $(SUBPROC_OBJS)
 $(OBJS) $(SUBPROC_OBJS) : config.h | $(DESTPATH)
 
 $(DESTPATH) :
-	@mkdir $@
+	@mkdir "$@"
 
 # 模式规则
 $(DESTPATH)/%.obj : %.c
@@ -381,9 +381,9 @@ $(DESTPATH)/%.obj : %.c
 
 .PHONY : clean
 clean :
-	@if exist "x64" @rd /s /q "x64"
-	@if exist "x86" @rd /s /q "x86"
-	@for /d %%P in ("make*") do \
+	@if exist x64 @rd /s /q x64
+	@if exist x86 @rd /s /q x86
+	@for /d %%P in (make*) do \
 		@if exist "%%~P\\config.h" @del /q "%%~P\\config.h"
-	@for /d %%P in ("make*") do \
+	@for /d %%P in (make*) do \
 		@if exist "%%~P\\/w32/subproc\\misc1.c" @del /q "%%~P\\/w32/subproc\\misc1.c"
