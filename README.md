@@ -8,7 +8,7 @@
 
 遂专门花时间学习了 [nmake参考](https://docs.microsoft.com/zh-cn/cpp/build/nmake-reference) ，想着能否写一写适用于 nmake 的 makefile 。也做了多次尝试，仍是被 nmake 的局限搞得灰头土脸。最终，还是坚定了使用 GNU make 的想法。
 
-百度 make 或 make for windows ，无法引导你找到正宗的 GNU make 。只有搜索 gnumake 才能真正找到 [GNU make](http://www.gnu.org/software/make/) 。
+- 百度 make 或 make for windows ，无法引导你找到正宗的 GNU make 。只有搜索 gnumake 才能真正找到 [GNU make](http://www.gnu.org/software/make/) 。
 
 而我欣喜地发现，GNU make 已原生地支持 windows 下使用 msvc 编译。
 
